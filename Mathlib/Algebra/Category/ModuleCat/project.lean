@@ -255,14 +255,9 @@ end lemma5
 
 section lemma6
 
-/-- The LinearMap on the tensor product induced by multiplication on `G → k` -/
-def μLinMap : TensorProduct k (G → k) (G → k) →ₗ[k] (G → k) :=
-  TensorProduct.lift
-    (LinearMap.mk₂ k Mul.mul right_distrib smul_mul_assoc left_distrib mul_smul_comm)
-
 /-- The `FDRep k G` morphism induced by multiplication on `G → k`. -/
 def μ : fdRepτᵣ k G ⊗ fdRepτᵣ k G ⟶ fdRepτᵣ k G where
-  hom := ModuleCat.ofHom μLinMap
+  hom := ModuleCat.ofHom (LinearMap.mul' k (G → k))
   comm := by
     intro (_ : G)
     ext (u : TensorProduct k (G → k) (G → k))
