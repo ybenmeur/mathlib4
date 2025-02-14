@@ -40,11 +40,13 @@ open CategoryTheory MonoidalCategory
 
 universe u
 
-variable (k G : Type u)
+namespace TannakaDuality
+
+variable (k G : Type u) [Field k]
 
 section forget
 
-variable [CommRing k] [Monoid G] (X : FDRep k G)
+variable [Monoid G] (X : FDRep k G)
 
 instance : (forget₂ (FDRep k G) (FGModuleCat k)).Monoidal := by
   change (Action.forget _ _).Monoidal
@@ -58,12 +60,11 @@ lemma F_μ {X Y : FDRep k G} :
 
 end forget
 
-variable [Field k]
-
 section T
 
 variable {k G} [Group G] (η : Aut (F k G))
 
+/- Note: these two lemmas should be in FDRep.lean -/
 @[simp]
 theorem ρ_inv_self_apply {A : FDRep k G} (g : G) (x : A) :
     A.ρ g⁻¹ (A.ρ g x) = x :=
@@ -87,11 +88,8 @@ def T_app (g : G) (X : FDRep k G) : X.V ≅ X.V where
     exact ρ_self_inv_apply g x
 
 /-- The function defining `T` -/
-def T_fun : G → Aut (F k G) := by
-  intro g
-  apply LaxMonoidalFunctor.isoOfComponents (T_app g) ?_ rfl (by intros; rfl)
-  intro _ _ f
-  exact (f.comm g).symm
+def T_fun (g : G) : Aut (F k G) :=
+  LaxMonoidalFunctor.isoOfComponents (T_app g) (fun f ↦ (f.comm g).symm) rfl (by intros; rfl)
 
 lemma T_apply (g : G) (X : FDRep k G) :
     ((T_fun g).hom.hom.app X).hom = X.ρ g := rfl
@@ -103,16 +101,17 @@ def T : G →* Aut (F k G) where
   map_one' := by
     ext
     simp only [T_apply, map_one]
-    exact rfl
-  map_mul' := by
-    intros
+    rfl
+  map_mul' _ _ := by
     ext
     simp only [T_apply, map_mul]
-    exact rfl
+    rfl
 
 end T
 
 section Indicator
+
+/- Note: this section needs cleaning up and should be implemented somewhere else ideally -/
 
 variable {k} {G : Type u} [DecidableEq G]
 
@@ -125,15 +124,13 @@ lemma e_eq_of_ne {s t : G} (h : s ≠ t) : e s t = (0 : k) := Pi.single_eq_of_ne
 
 lemma eq_of_e_eq_one {s t : G} (h : e s t = (1 : k)) : s = t := by
   by_contra
-  simp_all only [ne_eq, not_false_eq_true, Pi.single_eq_of_ne', zero_ne_one]
+  simp_all
 
 lemma mul_e (s : G) (f : G → k) : (e s) * f = f s • (e s) := by
     ext t
-    simp only [Pi.mul_apply, Pi.smul_apply, smul_eq_mul]
     by_cases h : s = t
-    · rw [h]
-      exact mul_comm _ _
-    · rwa [e_eq_of_ne, zero_mul, mul_zero]
+    · simp [h]
+    · simp [e_eq_of_ne h]
 
 lemma e_mul_self (s : G) : (e s) * (e s) = ((e s) : G → k) := by
   ext
@@ -162,6 +159,8 @@ end Indicator
 variable {k G} [Group G]
 
 section fdRepτᵣ
+
+/- Note: these definitions could be useful in a more general context with `k : Type u` -/
 
 /-- The representation on `G → k` induced by multiplication on the right in `G` -/
 def τᵣ : Representation k G (G → k) where
@@ -300,8 +299,6 @@ def τₗfdRepHom (s : G) : (fdRepτᵣ k G) ⟶ (fdRepτᵣ k G) where
   comm := by
     intro (t : G)
     ext (f : G → k)
-    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, Rep.ρ_hom, LinearMap.coe_comp,
-      Function.comp_apply]
     rw [funext_iff]
     intro u
     change (τₗ s) ((τᵣ t) f) u = (τᵣ t) ((τₗ s) f) u
@@ -330,7 +327,7 @@ lemma image_α_in_image_τᵣ (η : Aut (F k G)) : ∃ (s : G), α η = τᵣ s 
         exact eq_inv_mul_iff_mul_eq
   apply Basis.ext (Pi.basisFun k G)
   intro u
-  simp only [Pi.basisFun_apply, funext_iff]
+  rw [Pi.basisFun_apply, funext_iff]
   intro t
   change α_hom _ _ = _
   rw [τᵣ_apply, this, e_eq_iff]
@@ -343,12 +340,10 @@ section lemma8
 /-- Auxiliary map for the proof of `α_inj` -/
 def φ {X : FDRep k G} (v : X) : (G → k) →ₗ[k] X where
   toFun := fun f ↦ ∑ s : G, (f s) • (X.ρ s⁻¹ v)
-  map_add' := by
-    intros
+  map_add' _ _ := by
     simp only [Pi.add_apply, add_smul]
     exact Finset.sum_add_distrib
-  map_smul' := by
-    intros
+  map_smul' _ _ := by
     simp only [Pi.smul_apply, smul_eq_mul, RingHom.id_apply, Finset.smul_sum, smul_smul]
 
 lemma φ_apply {k G : Type u} [Field k] [Group G] [Fintype G] {X : FDRep k G} (v : X) (f : G → k) :
@@ -363,10 +358,9 @@ lemma φ_e_one_eq_id {X : FDRep k G} (v : X) : (φ v) (e 1) = v := by
     _ = a 1 := by
       apply add_left_eq_self.mpr
       apply Finset.sum_eq_zero
-      simp_all only [Finset.mem_compl, Finset.mem_singleton, ne_eq, not_false_eq_true,
-        Pi.single_eq_of_ne, zero_smul, implies_true, a]
+      simp_all [a]
     _ = _ := by
-      simp only [Pi.single_eq_same, inv_one, map_one, LinearMap.one_apply, one_smul, a]
+      simp [a]
 
 /-- Auxiliary representation morphism for the proof of `α_inj` -/
 @[simps]
@@ -394,7 +388,7 @@ lemma α_inj (η₁ η₂ : Aut (F k G))
   rw [h, ← h2] at h1
   apply_fun (· (e 1)) at h1
   change (η₁.hom.hom.app X).hom ((φ v) (e 1)) = (η₂.hom.hom.app X).hom ((φ v) (e 1)) at h1
-  simp [φ_e_one_eq_id] at h1
+  rw [φ_e_one_eq_id] at h1
   exact h1
 
 end lemma8
@@ -422,3 +416,5 @@ example : G ≃* Aut (F k G) :=
   MulEquiv.ofBijective (T k G) tannaka_duality
 
 end thm
+
+end TannakaDuality
