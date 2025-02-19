@@ -113,6 +113,16 @@ def of {V : Type u} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
   ⟨FGModuleCat.of k V, MonCat.ofHom ρ ≫ MonCat.ofHom
     (ModuleCat.endRingEquiv (ModuleCat.of k V)).symm.toMonoidHom⟩
 
+@[simp]
+theorem ρ_inv_self_apply {G : Type u} [Group G] {A : FDRep k G} (g : G) (x : A) :
+    A.ρ g⁻¹ (A.ρ g x) = x :=
+  show (A.ρ g⁻¹ * A.ρ g) x = x by rw [← map_mul, inv_mul_cancel, map_one, LinearMap.one_apply]
+
+@[simp]
+theorem ρ_self_inv_apply {G : Type u} [Group G] {A : FDRep k G} (g : G) (x : A) :
+    A.ρ g (A.ρ g⁻¹ x) = x :=
+  show (A.ρ g * A.ρ g⁻¹) x = x by rw [← map_mul, mul_inv_cancel, map_one, LinearMap.one_apply]
+
 instance : HasForget₂ (FDRep k G) (Rep k G) where
   forget₂ := (forget₂ (FGModuleCat k) (ModuleCat k)).mapAction (MonCat.of G)
 
@@ -125,6 +135,9 @@ example : MonoidalCategory (FDRep k G) := by infer_instance
 example : MonoidalPreadditive (FDRep k G) := by infer_instance
 
 example : MonoidalLinear k (FDRep k G) := by infer_instance
+
+instance : (forget₂ (FDRep k G) (FGModuleCat k)).Monoidal := by
+  change (Action.forget _ _).Monoidal; infer_instance
 
 open Module
 

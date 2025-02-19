@@ -1,3 +1,6 @@
+/- **moved to `Mathlib\RepresentationTheory\Tannaka.lean`** -/
+
+
 import Mathlib.Algebra.Category.ModuleCat.Basic
 import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 import Mathlib.CategoryTheory.Monoidal.Category
