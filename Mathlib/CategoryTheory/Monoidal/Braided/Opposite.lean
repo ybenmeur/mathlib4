@@ -36,4 +36,33 @@ namespace CategoryTheory.BraidedCategory
   simp only [op_tensorObj, tensorμ, op_comp, op_inv_associator, op_whiskerLeft, op_hom_associator,
     op_whiskerRight, op_hom_braiding, Category.assoc]
 
+namespace Functor
+
+variable {D : Type*} [Category D] [MonoidalCategory D] [BraidedCategory D]
+
+namespace rightOp
+
+variable (F : Cᵒᵖ ⥤ D)
+
+-- Functor.OpLaxBraided does not exist
+set_option backward.defeqAttrib.useBackward true in
+instance [F.Braided] : F.rightOp.Braided where
+  braided _ _ := by
+    apply Quiver.Hom.unop_inj
+    simp
+
+end rightOp
+
+namespace leftOp
+
+variable (F : C ⥤ Dᵒᵖ)
+
+set_option backward.defeqAttrib.useBackward true in
+instance [F.Braided] : F.leftOp.Braided where
+  braided _ _ := by apply Quiver.Hom.op_inj; simp
+
+end leftOp
+
+end Functor
+
 end CategoryTheory.BraidedCategory

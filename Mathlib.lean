@@ -101,6 +101,16 @@ public import Mathlib.Algebra.Category.AlgCat.Limits
 public import Mathlib.Algebra.Category.AlgCat.Monoidal
 public import Mathlib.Algebra.Category.AlgCat.Symmetric
 public import Mathlib.Algebra.Category.AlgCat.TensorAlgebra
+public import Mathlib.Algebra.Category.AlgObj.Bimon'
+public import Mathlib.Algebra.Category.AlgObj.Bimon'Equivalence
+public import Mathlib.Algebra.Category.AlgObj.Duality.Bimon_
+public import Mathlib.Algebra.Category.AlgObj.Duality.Hopf_
+public import Mathlib.Algebra.Category.AlgObj.FullFaithful.Bimon
+public import Mathlib.Algebra.Category.AlgObj.FullFaithful.Comon
+public import Mathlib.Algebra.Category.AlgObj.FullFaithful.Hopf
+public import Mathlib.Algebra.Category.AlgObj.FullFaithful.Mon
+public import Mathlib.Algebra.Category.AlgObj.Hopf'
+public import Mathlib.Algebra.Category.AlgObj.HopfEquivalence
 public import Mathlib.Algebra.Category.BialgCat.Basic
 public import Mathlib.Algebra.Category.BialgCat.Monoidal
 public import Mathlib.Algebra.Category.BoolRing
@@ -117,6 +127,8 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.FGModuleCat.Colimits
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.FGModuleCat.Limits
+public import Mathlib.Algebra.Category.FGProj.CartierDuality
+public import Mathlib.Algebra.Category.FGProj.FGProj
 public import Mathlib.Algebra.Category.Grp.AB
 public import Mathlib.Algebra.Category.Grp.Abelian
 public import Mathlib.Algebra.Category.Grp.Adjunctions

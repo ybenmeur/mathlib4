@@ -445,4 +445,74 @@ instance : (opOpEquivalence C).IsMonoidal where
   leftAdjoint_ε := by simp [opOpEquivalence]
   leftAdjoint_μ := by simp [opOpEquivalence]
 
+namespace Functor
+
+variable {D : Type*} [Category D] [MonoidalCategory D]
+
+namespace rightOp
+
+variable (F : Cᵒᵖ ⥤ D)
+
+@[simps]
+instance [F.LaxMonoidal] : F.rightOp.OplaxMonoidal where
+  η := (ε F).op
+  δ X Y := (μ F (op X) (op Y)).op
+  δ_natural_left _ _ := by apply Quiver.Hom.unop_inj; simp
+  δ_natural_right _ _ := by apply Quiver.Hom.unop_inj; simp
+  oplax_associativity _ _ _ := by apply Quiver.Hom.unop_inj; simp
+  oplax_left_unitality _ := by apply Quiver.Hom.unop_inj; simp
+  oplax_right_unitality _ := by apply Quiver.Hom.unop_inj; simp
+
+@[simps]
+instance [F.OplaxMonoidal] : F.rightOp.LaxMonoidal where
+  ε := (η F).op
+  μ X Y := (δ F (op X) (op Y)).op
+  μ_natural_left _ _ := by apply Quiver.Hom.unop_inj; simp
+  μ_natural_right _ _ := by apply Quiver.Hom.unop_inj; simp
+  associativity _ _ _ := by apply Quiver.Hom.unop_inj; simp
+  left_unitality _ := by apply Quiver.Hom.unop_inj; simp
+  right_unitality _ := by apply Quiver.Hom.unop_inj; simp
+
+instance [F.Monoidal] : F.rightOp.Monoidal where
+  ε_η := by apply Quiver.Hom.unop_inj; simp
+  η_ε := by apply Quiver.Hom.unop_inj; simp
+  μ_δ _ _ := by apply Quiver.Hom.unop_inj; simp
+  δ_μ _ _ := by apply Quiver.Hom.unop_inj; simp
+
+end rightOp
+
+namespace leftOp
+
+variable (F : C ⥤ Dᵒᵖ)
+
+@[simps]
+instance [F.LaxMonoidal] : F.leftOp.OplaxMonoidal where
+  η := (ε F).unop
+  δ X Y := (μ F X.unop Y.unop).unop
+  δ_natural_left _ _ := by apply Quiver.Hom.op_inj; simp
+  δ_natural_right _ _ := by apply Quiver.Hom.op_inj; simp
+  oplax_associativity _ _ _ := by apply Quiver.Hom.op_inj; simp
+  oplax_left_unitality _ := by apply Quiver.Hom.op_inj; simp
+  oplax_right_unitality _ := by apply Quiver.Hom.op_inj; simp
+
+@[simps]
+instance [F.OplaxMonoidal] : F.leftOp.LaxMonoidal where
+  ε := (η F).unop
+  μ X Y := (δ F (unop X) (unop Y)).unop
+  μ_natural_left _ _ := by apply Quiver.Hom.op_inj; simp
+  μ_natural_right _ _ := by apply Quiver.Hom.op_inj; simp
+  associativity _ _ _ := by apply Quiver.Hom.op_inj; simp
+  left_unitality _ := by apply Quiver.Hom.op_inj; simp
+  right_unitality _ := by apply Quiver.Hom.op_inj; simp
+
+instance [F.Monoidal] : F.leftOp.Monoidal where
+  ε_η := by apply Quiver.Hom.op_inj; simp
+  η_ε := by apply Quiver.Hom.op_inj; simp
+  μ_δ _ _ := by apply Quiver.Hom.op_inj; simp
+  δ_μ _ _ := by apply Quiver.Hom.op_inj; simp
+
+end leftOp
+
+end Functor
+
 end CategoryTheory
