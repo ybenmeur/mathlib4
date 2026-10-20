@@ -96,9 +96,9 @@ noncomputable def toBimon' : BialgCat R ⥤ Bimon' (ModuleCat R) where
   map f := {
     hom := ModuleCat.ofHom f.toBialgHom
     isBimonHom_hom := {
-      one_hom := ModuleCat.hom_ext <| LinearMap.ext (AlgHomClass.toAlgHom f.1).commutes
+      one_hom := ModuleCat.hom_ext <| LinearMap.ext (AlgHom.ofClass f.1).commutes
       mul_hom := ModuleCat.hom_ext <| TensorProduct.ext <| LinearMap.ext₂ <|
-        map_mul (AlgHomClass.toAlgHom f.1)
+        map_mul (AlgHom.ofClass f.1)
       hom_counit := (ModuleCat.hom_ext f.toBialgHom'.counit_comp)
       hom_comul := (ModuleCat.hom_ext f.toBialgHom'.map_comp_comul.symm)
     }

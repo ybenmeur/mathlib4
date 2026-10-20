@@ -21,7 +21,7 @@ public import Mathlib.Algebra.Category.AlgObj.Hopf'
 universe u v
 
 open CategoryTheory ModuleCat MonoidalCategory ComonObj MonObj BimonObj Bimon
-  MonModuleEquivalenceAlgebra
+  MonModuleEquivalenceAlgebra RingTheory.LinearMap
 
 variable {R : Type u} [CommRing R] (A : Type v) [Semiring A] [Bialgebra R A]
 
@@ -38,7 +38,7 @@ noncomputable instance (X : HopfAlgCat R) : HopfObj (ModuleCat.of R X) where
 -- #synth Category (Hopf (ModuleCat R))
 variable (R) in
 /-- The natural functor from `R`-Hopf algebras to Hopf objects in the category of `R`-modules. -/
-@[simps]
+@[simps, instance_reducible]
 noncomputable def toHopf' : HopfAlgCat R ⥤ Hopf (ModuleCat R) where
   obj X := ⟨ModuleCat.of R X⟩
   map f := Hopf.ofBimonHom ((toBimon' R).map ((forget₂ _ _).map f))
@@ -67,7 +67,7 @@ noncomputable abbrev ofHopfObj (X : ModuleCat R) [HopfObj X] : HopfAlgCat R := .
 
 variable (R) in
 /-- The natural functor from Hopf objects in the category of `R`-modules to `R`-Hopf algebras. -/
-@[simp]
+@[simp, instance_reducible]
 noncomputable def ofHopf' : Hopf (ModuleCat R) ⥤ HopfAlgCat R where
   obj X := ofHopfObj X.X
   map f := HopfAlgCat.ofHom <| ((ofBimon' R).map (Hopf.toBimon'.map f)).toBialgHom'
@@ -92,17 +92,36 @@ noncomputable def counit (X : Hopf (ModuleCat R)) :
 
 /-- The natural category equivalence between `R`-Hopf algebras and Hopf objects in the
 category of `R`-modules. -/
-@[simps]
+@[simps, instance_reducible]
 noncomputable def hopfEquivalence : HopfAlgCat R ≌ Hopf (ModuleCat R) where
   functor := toHopf' R
   inverse := ofHopf' R
   unitIso := NatIso.ofComponents unit
   counitIso := NatIso.ofComponents counit
 
-example (A : Hopf (ModuleCat R)) (x y : hopfEquivalence.inverse.obj A) :
+lemma mul_def (A : Hopf (ModuleCat R)) (x y : hopfEquivalence.inverse.obj A) :
     x * y = μ[A.X] (x ⊗ₜ y) := rfl
 
-example (A : Type _) [Ring A] [HopfAlgebra R A] :
-  μ[(hopfEquivalence.functor.obj (.of R A)).X].hom = LinearMap.mul' R A := rfl
+lemma hom_mul_eq_mul' (A : Type u) [Ring A] [HopfAlgebra R A] :
+    μ[(hopfEquivalence.functor.obj (.of R A)).X].hom = LinearMap.mul' R A := rfl
+
+lemma one_def (A : Hopf (ModuleCat R)) :
+    1 = η[A.X] 1 := rfl
+
+lemma hom_one_eq_algebra_linearMap (A : Type u) [Ring A] [HopfAlgebra R A] :
+    η[(hopfEquivalence.functor.obj (.of R A)).X].hom = Algebra.linearMap R A := rfl
+
+lemma comul_def (A : Hopf (ModuleCat R)) (x : hopfEquivalence.inverse.obj A) :
+    δ x = Δ[A.X] x := rfl
+
+lemma hom_comul_eq_comul (A : Type u) [Ring A] [HopfAlgebra R A] :
+    Δ[(hopfEquivalence.functor.obj (.of R A)).X].hom = δ := rfl
+
+lemma counit_def (A : Hopf (ModuleCat R)) (x : hopfEquivalence.inverse.obj A) :
+    ε x = ε[A.X] x := rfl
+
+lemma hom_counit_eq_counit (A : Type u) [Ring A] [HopfAlgebra R A] :
+    ε[(hopfEquivalence.functor.obj (.of R A)).X].hom = (ε : _ →ₗ[R] _) := rfl
+
 
 end Hopf

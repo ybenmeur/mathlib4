@@ -16,7 +16,7 @@ open CategoryTheory MonObj ComonObj BimonObj HopfObj Opposite
 
 variable {C : Type*} [Category C] [MonoidalCategory C] [BraidedCategory C]
 
-@[implicit_reducible, simps!]
+@[implicit_reducible, simps! (isSimp := false)]
 instance CategoryTheory.Hopf.hopfObjOp (X : C) [HopfObj X] : HopfObj (op X) where
   __ := CategoryTheory.BimonObj.bimonObjOp X
   antipode := antipode.op
@@ -27,7 +27,7 @@ instance CategoryTheory.Hopf.hopfObjOp (X : C) [HopfObj X] : HopfObj (op X) wher
     apply Quiver.Hom.unop_inj
     simp [monObjOp_mul, comonObjOp_comul, monObjOp_one, comonObjOp_counit]
 
-@[implicit_reducible, simps!]
+@[implicit_reducible, simps! (isSimp := false)]
 instance CategoryTheory.Hopf.hopfObjUnop (X : Cᵒᵖ) [HopfObj X] : HopfObj X.unop where
   __ := CategoryTheory.BimonObj.bimonObjUnop X
   antipode := antipode.unop
@@ -39,18 +39,22 @@ instance CategoryTheory.Hopf.hopfObjUnop (X : Cᵒᵖ) [HopfObj X] : HopfObj X.u
     apply Quiver.Hom.op_inj
     simp [monObjUnop_mul, comonObjUnop_comul, monObjUnop_one, comonObjUnop_counit]
 
-@[implicit_reducible, simps!]
+@[implicit_reducible, simps! (isSimp := false)]
 def CategoryTheory.Hopf.of_hopfObjOp (X : C) [HopfObj (Opposite.op X)] : HopfObj X where
   __ := CategoryTheory.op_instances.BimonObj.of_bimonObjOp X
   antipode := antipode.unop
   antipode_left := by
     apply Quiver.Hom.op_inj
-    simp
+    simp only [hopfObjUnop_comul, hopfObjUnop_mul, op_comp, op_tensorObj, Quiver.Hom.op_unop,
+      op_whiskerRight, Category.assoc, antipode_left, hopfObjUnop_counit, hopfObjUnop_one,
+      op_tensorUnit]
   antipode_right := by
     apply Quiver.Hom.op_inj
-    simp
+    simp only [hopfObjUnop_comul, hopfObjUnop_mul, op_comp, op_tensorObj, Quiver.Hom.op_unop,
+      op_whiskerLeft, Category.assoc, antipode_right, hopfObjUnop_counit, hopfObjUnop_one,
+      op_tensorUnit]
 
-@[implicit_reducible, simps]
+@[implicit_reducible, simps (isSimp := false)]
 def hopf_equiv_opposite : Hopf C ≌ (Hopf Cᵒᵖ)ᵒᵖ where
   functor := {
     obj X := op ⟨op X.X⟩

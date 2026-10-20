@@ -50,11 +50,13 @@ abbrev ofHom {V W : Type v} [AddCommGroup V] [Module R V] [Module.Finite R V]
 
 -- #check LinearEquiv.toFGModuleCatIso
 
--- variable {R} in
--- /-- Converts an isomorphism in the category `FGModuleCat R` to
--- a `LinearEquiv` between the underlying modules. -/
--- def isoToLinearEquiv {V W : FGProj.{v} R} (i : V ≅ W) : V ≃ₗ[R] W :=
---   ((forget₂ (FGProj.{v} R) (ModuleCat.{v} R)).mapIso i).toLinearEquiv
+instance : HasForget₂ (FGProj R) (ModuleCat R) := HasForget₂.trans _ (FGModuleCat R) _
+
+variable {R} in
+/-- Converts an isomorphism in the category `FGModuleCat R` to
+a `LinearEquiv` between the underlying modules. -/
+def isoToLinearEquiv {V W : FGProj.{v} R} (i : V ≅ W) : V.obj ≃ₗ[R] W.obj :=
+  ((forget₂ (FGProj.{v} R) (ModuleCat.{v} R)).mapIso i).toLinearEquiv
 
 variable {R} in
 /-- Converts a `LinearEquiv` to an isomorphism in the category `FGModuleCat R`. -/
@@ -88,17 +90,19 @@ lemma dual_map_hom_hom_hom {X Y : (FGProj R)ᵒᵖ} (f : X ⟶ Y) :
     (dual.map f).hom.hom.hom = f.unop.hom.hom.hom.dualMap := rfl
 
 open TensorProduct
--- #check TensorProduct.dualDistrib
--- #check Module.Projective.tensorProduct
-
-#check FGModuleCat.tensorObj_obj
 
 variable {R} in
-/-- Lift a linear map between finitely generated modules to `FGModuleCat R`. -/
 @[simp]
 lemma _root_.FGModuleCat.hom_ofHom {V W : Type v} [AddCommGroup V] [Module R V] [Module.Finite R V]
     [AddCommGroup W] [Module R W] [Module.Finite R W]
     (f : V →ₗ[R] W) : (FGModuleCat.ofHom f).hom = ModuleCat.ofHom f := rfl
+
+variable {R} in
+@[simp]
+lemma hom_ofHom {V W : Type v} [AddCommGroup V] [Module R V] [Module.Finite R V]
+    [Module.Projective R V]
+    [AddCommGroup W] [Module R W] [Module.Finite R W] [Module.Projective R W]
+    (f : V →ₗ[R] W) : (ofHom f).hom = FGModuleCat.ofHom f := rfl
 
 section dualDistrib
 lemma dualDistrib_assoc_symm (R M N P : Type*) [CommSemiring R]
@@ -165,8 +169,9 @@ end dualDistrib
 -- set_option backward.defeqAttrib.useBackward true in
 -- set_option backward.isDefEq.respectTransparency false in
 set_option backward.isDefEq.respectTransparency.types false in
+@[simps]
 instance : (dual (R:=R)).LaxMonoidal where -- this is true in ModuleCat as well
-  ε := ofHom ((LinearMap.ringLmapEquivSelf R R R).symm) -- unfortunately this is not good defeq
+  ε := ofHom (LinearMap.ringLmapEquivSelf R R R).symm
   μ X Y := ofHom (dualDistrib R X.unop.obj Y.unop.obj)
   μ_natural_left {X Y} f Z := by
     ext f : 3
@@ -187,39 +192,35 @@ instance : (dual (R:=R)).LaxMonoidal where -- this is true in ModuleCat as well
     exact dualDistrib_assoc'_apply f
   left_unitality X := by
     ext f : 3
-    -- simp [ModuleCat.hom_hom_leftUnitor, ModuleCat.hom_inv_leftUnitor, ModuleCat.hom_whiskerRight]
     induction f using TensorProduct.inductionOn
     · apply LinearMap.ext
       intro x
       simp only [ObjectProperty.tensorObj_obj, ObjectProperty.tensorUnit_obj,
         ObjectProperty.leftUnitor_def, ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom,
         ModuleCat.hom_hom_leftUnitor, LinearEquiv.coe_coe, unop_tensorUnit,
-        ObjectProperty.whiskerRight_def, hom_ofHom, unop_tensorObj, obj_carrier,
-        unop_hom_leftUnitor, ObjectProperty.isoMk_inv, ModuleCat.hom_inv_leftUnitor,
-        ObjectProperty.FullSubcategory.comp_hom, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom,
-        ModuleCat.hom_whiskerRight, LinearMap.coe_comp, Function.comp_apply,
-        LinearMap.dualMap_apply, lid_symm_apply]
+        ObjectProperty.whiskerRight_def, FGModuleCat.hom_ofHom, unop_tensorObj, obj_carrier,
+        unop_hom_leftUnitor, ObjectProperty.isoMk_inv, ObjectProperty.FullSubcategory.comp_hom,
+        ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, ModuleCat.hom_whiskerRight,
+        LinearMap.coe_comp, Function.comp_apply, LinearMap.dualMap_apply,
+        ModuleCat.MonoidalCategory.leftUnitor_inv_apply]
       rw [TensorProduct.lid_tmul, LinearMap.rTensor_tmul, dualDistrib_apply]
-      erw [LinearMap.lsmul_apply]
-      simp only [smul_eq_mul, Module.End.one_apply, one_mul, LinearMap.smul_apply]
+      simp [← FGModuleCat.obj_carrier, ModuleCat.MonoidalCategory.tensorUnit_carrier]
     · simp_all only [map_add]
   right_unitality X := by
     ext f : 3
-    -- simp [ModuleCat.hom_hom_leftUnitor, ModuleCat.hom_inv_leftUnitor, ModuleCat.hom_whiskerRight]
     induction f using TensorProduct.inductionOn
     · apply LinearMap.ext
       intro x
       simp only [ObjectProperty.tensorObj_obj, ObjectProperty.tensorUnit_obj,
         ObjectProperty.rightUnitor_def, ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom,
         ModuleCat.hom_hom_rightUnitor, LinearEquiv.coe_coe, unop_tensorUnit,
-        ObjectProperty.whiskerLeft_def, hom_ofHom, unop_tensorObj, obj_carrier,
+        ObjectProperty.whiskerLeft_def, FGModuleCat.hom_ofHom, unop_tensorObj, obj_carrier,
         unop_hom_rightUnitor, ObjectProperty.isoMk_inv, ObjectProperty.FullSubcategory.comp_hom,
         ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, ModuleCat.hom_whiskerLeft,
         LinearMap.coe_comp, Function.comp_apply, LinearMap.dualMap_apply,
         ModuleCat.MonoidalCategory.rightUnitor_inv_apply]
       rw [TensorProduct.rid_tmul, LinearMap.lTensor_tmul, dualDistrib_apply]
-      erw [LinearMap.lsmul_apply]
-      simp only [smul_eq_mul, Module.End.one_apply, mul_one, LinearMap.smul_apply, mul_comm]
+      simp [← FGModuleCat.obj_carrier, ModuleCat.MonoidalCategory.tensorUnit_carrier, mul_comm]
     · simp_all only [map_add]
 
 @[simp]
@@ -250,16 +251,6 @@ lemma _root_.CategoryTheory.ObjectProperty.braiding_inv_hom {C : Type*} [Categor
     [MonoidalCategory C] (P : ObjectProperty C) [P.IsMonoidal] [BraidedCategory C]
     (X Y : P.FullSubcategory) : (β_ X Y).inv.hom = (β_ X.obj Y.obj).inv := rfl
 
-lemma dualDistrib_bijective (M N : Type*) [AddCommGroup M] [Module R M] [Module.Finite R M]
-  [Module.Projective R M] [AddCommGroup N] [Module R N] [Module.Finite R N]
-  [Module.Projective R N] : Function.Bijective (dualDistrib R M N) := sorry
-
-@[simp]
-noncomputable def dualDistribEquiv' (M N : Type*) [AddCommGroup M] [Module R M]
-    [Module.Finite R M] [Module.Projective R M] [AddCommGroup N] [Module R N] [Module.Finite R N]
-    [Module.Projective R N] :
-    Module.Dual R M ⊗[R] Module.Dual R N ≃ₗ[R] Module.Dual R (M ⊗[R] N) :=
-  .ofBijective (dualDistrib R M N) (dualDistrib_bijective R M N)
 
 -- set_option backward.isDefEq.respectTransparency false in
 instance : (dual (R:=R)).LaxBraided where -- this is true in ModuleCat as well
@@ -271,7 +262,7 @@ instance : (dual (R:=R)).LaxBraided where -- this is true in ModuleCat as well
     apply TensorProduct.ext'
     intro x y
     simp only [obj_carrier, unop_tensorObj, ObjectProperty.tensorObj_obj, unop_hom_braiding,
-      ObjectProperty.FullSubcategory.comp_hom, hom_ofHom, ModuleCat.hom_comp,
+      ObjectProperty.FullSubcategory.comp_hom, FGModuleCat.hom_ofHom, ModuleCat.hom_comp,
       ConcreteCategory.hom_ofHom, dual_μ_hom_hom_hom, LinearMap.coe_comp, Function.comp_apply,
       LinearMap.dualMap_apply]
     simp only [_root_.CategoryTheory.ObjectProperty.braiding_hom_hom]
@@ -279,14 +270,16 @@ instance : (dual (R:=R)).LaxBraided where -- this is true in ModuleCat as well
     rw [ModuleCat.MonoidalCategory.braiding_hom_apply]
     rw [dualDistrib_apply, dualDistrib_apply, mul_comm]
 
-noncomputable def coreMonoidal : (dual (R:=R)).CoreMonoidal where
-  εIso := (LinearMap.ringLmapEquivSelf R R R).symm.toFGProjIso
-  μIso X Y := (dualDistribEquiv' R X.unop.obj Y.unop.obj).toFGProjIso
-  μIso_hom_natural_left := (instLaxMonoidalOppositeDual R).μ_natural_left
-  μIso_hom_natural_right := (instLaxMonoidalOppositeDual R).μ_natural_right
-  associativity := (instLaxMonoidalOppositeDual R).associativity
-  left_unitality := (instLaxMonoidalOppositeDual R).left_unitality
-  right_unitality := (instLaxMonoidalOppositeDual R).right_unitality
+instance : IsIso (Functor.LaxMonoidal.ε (dual (R:=R))) :=
+  (LinearMap.ringLmapEquivSelf R R R).toFGProjIso.isIso_inv
+instance (X Y : (FGProj R)ᵒᵖ) : IsIso (Functor.LaxMonoidal.μ (dual (R:=R)) X Y) := by
+  refine Iso.isIso_hom (LinearEquiv.toFGProjIso
+    (LinearEquiv.ofBijective (dualDistrib R X.unop.obj Y.unop.obj) ?_))
+  rw [← toLinearMap_dualDistribEquiv]
+  exact LinearEquiv.bijective _
+  -- (dualDistribEquiv' R X.unop.obj Y.unop.obj).toFGProjIso.isIso_hom
+
+noncomputable abbrev coreMonoidal : (dual (R:=R)).CoreMonoidal := .ofLaxMonoidal _
 
 noncomputable instance : (dual (R:=R)).OplaxMonoidal := (coreMonoidal R).toOplaxMonoidal
 noncomputable instance : (dual (R:=R)).Monoidal := (coreMonoidal R).toMonoidal
