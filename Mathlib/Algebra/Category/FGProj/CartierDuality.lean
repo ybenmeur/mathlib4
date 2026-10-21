@@ -10,7 +10,25 @@ public import Mathlib.Algebra.Category.AlgObj.FullFaithful.Hopf
 public import Mathlib.Algebra.Category.AlgObj.HopfEquivalence
 public import Mathlib.Algebra.Category.FGProj.FGProj
 
-/-! Cartier duality for finite projective Hopf algebras -/
+/-!
+# Cartier duality for finite projective Hopf algebras
+
+## Main definitions
+
+* `CartierDual`
+
+## Tags
+
+Cartier duality, Hopf algebras
+
+## Implementation details
+
+We use a categorical point of view: Hopf algebras are Hopf monoids in the category of modules.
+The duality functor on the subcategory of finite projective modules is monoidal braided
+(i.e. the dual of a tensor product is isomorphic to the tensor product of the duals) and thus sends
+Hopf monoids to Hopf monoids.
+
+-/
 
 @[expose] public section
 
@@ -93,6 +111,9 @@ private lemma one_eq_mon_one : (1 : CartierDual R A).toDual =
     η[((hopfFGProjDual R).obj (toHopfFGProj R A)).unop.X].hom.hom.hom 1 := rfl
 end onelemmas
 
+-- attribute [local implicit_reducible] ModuleCat.isFG
+
+set_option backward.isDefEq.respectTransparency.types false in
 @[simp]
 lemma one_def : (1 : CartierDual R A).toDual = (ε : A →ₗ[R] R) := by
   rw [one_eq_mon_one]
@@ -105,7 +126,7 @@ lemma one_def : (1 : CartierDual R A).toDual = (ε : A →ₗ[R] R) := by
     Functor.rightOp_map, ObjectProperty.homMk_hom, ObjectProperty.FullSubcategory.comp_hom,
     FGProj.ε_hom, hom_ofHom, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp,
     Function.comp_apply]
-  erw? [FGModuleCat.hom_ofHom] -- mysterious erw
+  -- rw [FGModuleCat.hom_ofHom] -- mysterious erw
   ext
   rw [LinearMap.dualMap_apply]
   simp [Hopf.hom_counit_eq_counit]
@@ -128,8 +149,6 @@ private lemma coalgebra_comul_eq_comon_comul (f : CartierDual R A) :
     toDualTensor (Coalgebra.comul (R:=R) f) =
   Δ[((hopfFGProjDual R).obj (toHopfFGProj R A)).unop.X].hom.hom.hom f.toDual :=
   rfl
-
-
 end comullemmas
 
 @[simp]
@@ -186,7 +205,7 @@ lemma counit_def (f : CartierDual R A) :
 open HopfAlgebra in
 @[simp]
 lemma antipode_def (f : CartierDual R A) (x : A) :
-  (antipode R f).toDual x = f.toDual (antipode R x):= rfl
+    (antipode R f).toDual x = f.toDual (antipode R x):= rfl
 
 end operations
 
