@@ -513,6 +513,38 @@ instance [F.Monoidal] : F.leftOp.Monoidal where
 
 end leftOp
 
+namespace op
+
+variable (F : C ⥤ D)
+
+@[simps]
+instance [F.LaxMonoidal] : F.op.OplaxMonoidal where
+  η := (ε F).op
+  δ X Y := (μ F X.unop Y.unop).op
+  δ_natural_left _ _ := by apply Quiver.Hom.unop_inj; simp
+  δ_natural_right _ _ := by apply Quiver.Hom.unop_inj; simp
+  oplax_associativity _ _ _ := by apply Quiver.Hom.unop_inj; simp
+  oplax_left_unitality _ := by apply Quiver.Hom.unop_inj; simp
+  oplax_right_unitality _ := by apply Quiver.Hom.unop_inj; simp
+
+@[simps]
+instance [F.OplaxMonoidal] : F.op.LaxMonoidal where
+  ε := (η F).op
+  μ X Y := (δ F X.unop Y.unop).op
+  μ_natural_left _ _ := by apply Quiver.Hom.unop_inj; simp
+  μ_natural_right _ _ := by apply Quiver.Hom.unop_inj; simp
+  associativity _ _ _ := by apply Quiver.Hom.unop_inj; simp
+  left_unitality _ := by apply Quiver.Hom.unop_inj; simp
+  right_unitality _ := by apply Quiver.Hom.unop_inj; simp
+
+instance [F.Monoidal] : F.op.Monoidal where
+  ε_η := by apply Quiver.Hom.unop_inj; simp
+  η_ε := by apply Quiver.Hom.unop_inj; simp
+  μ_δ _ _ := by apply Quiver.Hom.unop_inj; simp
+  δ_μ _ _ := by apply Quiver.Hom.unop_inj; simp
+
+end op
+
 end Functor
 
 end CategoryTheory

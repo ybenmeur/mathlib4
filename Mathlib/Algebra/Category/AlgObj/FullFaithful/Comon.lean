@@ -14,63 +14,50 @@ public import Mathlib.CategoryTheory.Monoidal.Comon_
 namespace CategoryTheory.Functor
 
 variable {C D : Type*} [Category C] [Category D] [MonoidalCategory C]
-  [MonoidalCategory D] (F : C ⥤ D) [F.Full] [F.Faithful]
-    [F.LaxMonoidal] (X : C)
-
-/-! If `F` is a fully faithful monoidal functor, and `F.obj X` admits a comonoid object
-structure, then there is a natural comonoid object structure on `X`. -/
-@[implicit_reducible]
-noncomputable def comonobj_of_comonobj_obj [ComonObj (F.obj X)] : ComonObj X where
-  counit := F.preimage (ComonObj.counit ≫ Functor.LaxMonoidal.ε F)
-  comul := F.preimage (ComonObj.comul ≫ Functor.LaxMonoidal.μ F X X)
-  counit_comul := by
-    apply F.map_injective
-    simp [← LaxMonoidal.μ_natural_left]
-  comul_counit := by
-    apply F.map_injective
-    simp [← LaxMonoidal.μ_natural_right]
-  comul_assoc := by
-    apply F.map_injective
-    simp [← LaxMonoidal.μ_natural_left_assoc, ← LaxMonoidal.μ_natural_right]
-
-lemma comonobj_of_comonobj_obj_counit_def [ComonObj (F.obj X)] :
-    letI := F.comonobj_of_comonobj_obj X;
-    ComonObj.counit (X:=X) = F.preimage (ComonObj.counit ≫ Functor.LaxMonoidal.ε F) := rfl
-
-@[simp]
-lemma comonobj_of_comonobj_obj_map_counit [ComonObj (F.obj X)] :
-    letI := F.comonobj_of_comonobj_obj X;
-    F.map (ComonObj.counit (X:=X)) = ComonObj.counit ≫ Functor.LaxMonoidal.ε F :=
-  F.map_preimage _
-
-lemma comonobj_of_comonobj_obj_comul_def [ComonObj (F.obj X)] :
-    letI := F.comonobj_of_comonobj_obj X;
-    ComonObj.comul (X:=X) = F.preimage (ComonObj.comul ≫ Functor.LaxMonoidal.μ F X X) := rfl
-
-@[simp]
-lemma comonobj_of_comonobj_obj_map_comul [ComonObj (F.obj X)] :
-    letI := F.comonobj_of_comonobj_obj X;
-    F.map (ComonObj.comul (X:=X)) = ComonObj.comul ≫ Functor.LaxMonoidal.μ F X X :=
-  F.map_preimage _
+  [MonoidalCategory D] (F : C ⥤ D) (X : C)
 
 section FullyFaithful
 
-variable {F}
+variable {F} (hF : F.FullyFaithful)
 
 /-- Pullback a comonoid object along a fully faithful lax monoidal functor. -/
 @[simps]
-abbrev FullyFaithful.comonObj (hF : F.FullyFaithful) (X : C) [ComonObj (F.obj X)] : ComonObj X where
+abbrev FullyFaithful.comonObj [F.LaxMonoidal] (X : C) [ComonObj (F.obj X)] : ComonObj X where
   counit := hF.preimage (ComonObj.counit ≫ Functor.LaxMonoidal.ε F)
   comul := hF.preimage (ComonObj.comul ≫ Functor.LaxMonoidal.μ F X X)
   counit_comul := by
-    apply F.map_injective
+    apply hF.map_injective
     simp [← LaxMonoidal.μ_natural_left]
   comul_counit := by
-    apply F.map_injective
+    apply hF.map_injective
     simp [← LaxMonoidal.μ_natural_right]
   comul_assoc := by
-    apply F.map_injective
+    apply hF.map_injective
     simp [← LaxMonoidal.μ_natural_left_assoc, ← LaxMonoidal.μ_natural_right]
+
+lemma FullyFaithful.isComonHom [F.Monoidal] (X Y : C) [ComonObj (F.obj X)]
+    [ComonObj (F.obj Y)] (f : F.obj X ⟶ F.obj Y) [IsComonHom f] :
+    letI := hF.comonObj X; letI := hF.comonObj Y;
+    IsComonHom (hF.preimage f) := by
+  let := hF.comonObj X; let := hF.comonObj Y;
+  refine IsComonHom.mk ?_ ?_
+  · apply hF.map_injective
+    simp
+  · apply hF.map_injective
+    simp [Monoidal.map_tensor]
+
+/-- Pullback a comonoid object along a fully faithful lax monoidal functor as a bundled object. -/
+@[implicit_reducible]
+def FullyFaithful.comon [F.LaxMonoidal] (hF : F.FullyFaithful) (X : C) [ComonObj (F.obj X)] :
+    Comon C where
+  X := X
+  comon := hF.comonObj X
+
+/-- Pullback a morphism between comonoid objects along a fully faithful monoidal functor. -/
+@[simps!]
+def FullyFaithful.comonMap [F.Monoidal] (hF : F.FullyFaithful) (X Y : C) [ComonObj (F.obj X)]
+    [ComonObj (F.obj Y)] (f : F.obj X ⟶ F.obj Y) [IsComonHom f] : hF.comon X ⟶ hF.comon Y :=
+  letI := hF.isComonHom X Y f; .mk (hF.preimage f)
 
 end FullyFaithful
 

@@ -6,7 +6,7 @@ Authors: Yacine Benmeuraiem
 module
 
 public import Mathlib.Algebra.Category.AlgObj.Duality.Bimon_
-public import Mathlib.Algebra.Category.AlgObj.Hopf'
+public import Mathlib.CategoryTheory.Monoidal.Hopf_
 
 /-! # Hopf objects in opposite category -/
 
@@ -58,13 +58,13 @@ def CategoryTheory.Hopf.of_hopfObjOp (X : C) [HopfObj (Opposite.op X)] : HopfObj
 def hopf_equiv_opposite : Hopf C ≌ (Hopf Cᵒᵖ)ᵒᵖ where
   functor := {
     obj X := op ⟨op X.X⟩
-    map f := op (Hopf.Hom.mk f.hom.op)
+    map f := op (Hopf.ofHom f.hom.hom.op)
     map_id _ := rfl
     map_comp _ _ := rfl
   }
   inverse := {
     obj X := ⟨X.unop.X.unop⟩
-    map f := Hopf.Hom.mk f.unop.hom.unop
+    map f := Hopf.ofHom f.unop.hom.hom.unop
     map_id _ := rfl
     map_comp _ _ := rfl
   }

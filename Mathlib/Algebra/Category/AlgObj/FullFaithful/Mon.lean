@@ -14,38 +14,45 @@ public import Mathlib.CategoryTheory.Monoidal.Mon
 namespace CategoryTheory.Functor
 
 variable {C D : Type*} [Category C] [Category D] [MonoidalCategory C]
-  [MonoidalCategory D] (F : C ⥤ D) [F.Full] [F.Faithful]
+  [MonoidalCategory D] {F : C ⥤ D}
+
+section OplaxMonoidal
+
+variable
     [F.OplaxMonoidal] (X : C)
 
-/-! If `F` is a fully faithful monoidal functor, and `F.obj X` admits a monoid object
-structure, then there is a natural monoid object structure on `X`. -/
-@[implicit_reducible]
-noncomputable def monobj_of_monobj_obj [MonObj (F.obj X)] : MonObj X := by
-  have : F.FullyFaithful := by exact FullyFaithful.ofFullyFaithful F
-  exact this.monObj X
+/-- Pullback a monoid object along a fully faithful oplax monoidal functor as a bundled object. -/
+@[to_additive (attr := implicit_reducible) FullyFaithful.addMon
+/-- Pullback an additive monoid object along a fully faithful oplax monoidal functor as a bundled
+object. -/]
+def FullyFaithful.mon (hF : F.FullyFaithful) (X : C) [MonObj (F.obj X)] :
+    Mon C where
+  X := X
+  mon := hF.monObj X
 
-lemma monobj_of_monobj_obj_one_def [MonObj (F.obj X)] :
-    letI := F.monobj_of_monobj_obj X;
-    MonObj.one (X:=X) =
-      F.preimage (Functor.OplaxMonoidal.η F ≫ MonObj.one) := rfl
+end OplaxMonoidal
 
-@[simp]
-lemma monobj_of_monobj_obj_map_one [MonObj (F.obj X)] :
-    letI := F.monobj_of_monobj_obj X;
-    F.map (MonObj.one (X:=X)) = Functor.OplaxMonoidal.η F ≫ MonObj.one :=
-  F.map_preimage _
+section Monoidal
+variable [F.Monoidal]
 
-lemma monobj_of_monobj_obj_mul_def [MonObj (F.obj X)] :
-    letI := F.monobj_of_monobj_obj X;
-    MonObj.mul (X:=X) =
-      F.preimage (Functor.OplaxMonoidal.δ F X X ≫ MonObj.mul) := rfl
+lemma FullyFaithful.isMonHom (hF : F.FullyFaithful) (X Y : C) [MonObj (F.obj X)]
+    [MonObj (F.obj Y)] (f : F.obj X ⟶ F.obj Y) [IsMonHom f] :
+    letI := hF.monObj X; letI := hF.monObj Y;
+    IsMonHom (hF.preimage f) := by
+  let := hF.monObj X; let := hF.monObj Y;
+  refine IsMonHom.mk ?_ ?_
+  · apply hF.map_injective
+    simp
+  · apply hF.map_injective
+    simp [Monoidal.map_tensor]
 
-@[simp]
-lemma monobj_of_monobj_obj_map_mul [MonObj (F.obj X)] :
-    letI := F.monobj_of_monobj_obj X;
-    F.map (MonObj.mul (X:=X)) = Functor.OplaxMonoidal.δ F X X ≫ MonObj.mul :=
-  F.map_preimage _
+/-- Pullback a morphism between monoid objects along a fully faithful monoidal functor. -/
+@[simps!]
+def FullyFaithful.monMap (hF : F.FullyFaithful) (X Y : C) [MonObj (F.obj X)]
+    [MonObj (F.obj Y)] (f : F.obj X ⟶ F.obj Y) [IsMonHom f] : hF.mon X ⟶ hF.mon Y :=
+  letI := hF.isMonHom X Y f; .mk (hF.preimage f)
 
+end Monoidal
 end CategoryTheory.Functor
 
 -- #min_imports

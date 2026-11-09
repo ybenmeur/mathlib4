@@ -5,10 +5,14 @@ Authors: Yacine Benmeuraiem
 -/
 module
 
-public import Mathlib.Algebra.Category.AlgObj.Bimon'
 public import Mathlib.Algebra.Category.BialgCat.Basic
 public import Mathlib.Algebra.Category.CoalgCat.ComonEquivalence
+public import Mathlib.CategoryTheory.Monoidal.Bimon_
 public import Mathlib.CategoryTheory.Monoidal.Internal.Module
+
+import Aesop.Frontend.Tactic
+import Aesop.Main
+import Mathlib.Tactic.Lemma
 
 -- set_option profiler true
 
@@ -21,7 +25,7 @@ public import Mathlib.CategoryTheory.Monoidal.Internal.Module
 
 universe u v
 
-open CategoryTheory ModuleCat MonoidalCategory ComonObj MonObj BimonObj MonModuleEquivalenceAlgebra
+open CategoryTheory ModuleCat MonoidalCategory MonObj BimonObj MonModuleEquivalenceAlgebra
 
 
 variable {R : Type u} [CommRing R] (A : Type v) [Semiring A] [Bialgebra R A]
@@ -59,9 +63,14 @@ lemma tensorProductMul_apply' (X : ModuleCat R) [MonObj X] (x) :
     LinearMap.mul' R (TensorProduct R X X) x :=
   congr($(tensorProductMul' X) x)
 
+-- @[simp]
+lemma mul'_eq_μ_hom (X : ModuleCat R) [MonObj X] : LinearMap.mul' R X = Hom.hom μ[X] := by
+  ext
+  rfl
+
 end lemmas
 
-namespace Bimon
+namespace CategoryTheory.BialgCat
 
 @[simps! one mul]
 noncomputable instance (X : BialgCat R) : MonObj (ModuleCat.of R X) :=
@@ -86,36 +95,29 @@ noncomputable instance (X : BialgCat R) : BimonObj (ModuleCat.of R X) where
       intro x y
       simp [leftUnitor_def, ModuleCat.MonoidalCategory.tensorHom_def,
         tensorUnit_carrier, tensorObj_carrier]
-  one_counit := by aesop
 
 variable (R) in
 /-- The natural functor from `R`-bialgebras to bimonoid objects in the category of `R`-modules. -/
-@[simps]
-noncomputable def toBimon' : BialgCat R ⥤ Bimon' (ModuleCat R) where
+@[simps, implicit_reducible]
+noncomputable def toBimon : BialgCat R ⥤ Bimon (ModuleCat R) where
   obj X := ⟨ModuleCat.of R X⟩
   map f := {
     hom := ModuleCat.ofHom f.toBialgHom
     isBimonHom_hom := {
-      one_hom := ModuleCat.hom_ext <| LinearMap.ext (AlgHom.ofClass f.1).commutes
+      one_hom := ModuleCat.hom_ext <| LinearMap.ext (AlgHom.ofClass f.toBialgHom).commutes
       mul_hom := ModuleCat.hom_ext <| TensorProduct.ext <| LinearMap.ext₂ <|
-        map_mul (AlgHom.ofClass f.1)
-      hom_counit := (ModuleCat.hom_ext f.toBialgHom'.counit_comp)
-      hom_comul := (ModuleCat.hom_ext f.toBialgHom'.map_comp_comul.symm)
+        map_mul (AlgHom.ofClass f.toBialgHom)
+      hom_counit := (ModuleCat.hom_ext f.toBialgHom.counit_comp)
+      hom_comul := (ModuleCat.hom_ext f.toBialgHom.map_comp_comul.symm)
     }
   }
-
-@[simp]
-lemma mul'_eq_μ_hom (X : ModuleCat R) [MonObj X] : LinearMap.mul' R X = Hom.hom μ[X] := by
-  ext
-  rfl
 
 /-- A bimonoid object in the category of `R`-modules has a natural comultiplication
 and counit. -/
 @[simp]
 noncomputable instance ofBimonObjBialgebra (X : ModuleCat R) [BimonObj X] : Bialgebra R X where
   __ := (CoalgCat.ofComonObj X).instCoalgebra
-  -- __ := ModuleCat.MonModuleEquivalenceAlgebra.functor.obj ⟨X⟩
-  counit_one := congr($(one_counit X) 1) -- wish there were simps for CoalgCat.ofComonObj
+  counit_one := congr($(one_counit X) 1)
   mul_compr₂_counit := by
     ext x y
     exact congr($(BimonObj.mul_counit X) (x ⊗ₜ y))
@@ -129,16 +131,11 @@ noncomputable instance ofBimonObjBialgebra (X : ModuleCat R) [BimonObj X] : Bial
     rw [tensorProductMul_apply']
     rfl
 
-/-- A bimonoid object in the category of `R`-modules has a natural `R`-bialgebra
-structure. -/
--- @[simp]
-noncomputable abbrev ofBimonObj (X : ModuleCat R) [BimonObj X] : BialgCat R := .of R X
-
 variable (R) in
 /-- The natural functor from bimonoid objects in the category of `R`-modules to `R`-bialgebras. -/
-@[simp]
-noncomputable def ofBimon' : Bimon' (ModuleCat R) ⥤ BialgCat R where
-  obj X := ofBimonObj X.X
+@[simp, implicit_reducible]
+noncomputable def ofBimon : Bimon (ModuleCat R) ⥤ BialgCat R where
+  obj X := .of R X.X
   map f := {
     toBialgHom' := {
       f.hom.hom with
@@ -150,10 +147,9 @@ noncomputable def ofBimon' : Bimon' (ModuleCat R) ⥤ BialgCat R where
     }
   }
 
--- attribute [ext] BialgCat
-
 @[simps]
-def unit (X : BialgCat R) : (𝟭 (BialgCat R)).obj X ≅ (toBimon' R ⋙ ofBimon' R).obj X where
+def bimonEquivalence_unit (X : BialgCat R) :
+    (𝟭 (BialgCat R)).obj X ≅ (toBimon R ⋙ ofBimon R).obj X where
   hom := {
     toBialgHom' := {
       toFun := id
@@ -163,8 +159,6 @@ def unit (X : BialgCat R) : (𝟭 (BialgCat R)).obj X ≅ (toBimon' R ⋙ ofBimo
       map_comp_comul := by
         ext (x : X)
         exact DFunLike.congr_fun (TensorProduct.map_id (M := X) (N := X)) _
-        -- erw [TensorProduct.map_id]
-        -- rfl
       map_one' := (algebraMap R X).map_one.symm
       map_mul' x y := rfl
     }
@@ -178,8 +172,6 @@ def unit (X : BialgCat R) : (𝟭 (BialgCat R)).obj X ≅ (toBimon' R ⋙ ofBimo
       map_comp_comul := by
         ext (x : X)
         exact DFunLike.congr_fun (TensorProduct.map_id (M := X) (N := X)) _
-        -- erw [TensorProduct.map_id]
-        -- rfl
       map_one' := (algebraMap R X).map_one
       map_mul' x y := rfl
     }
@@ -188,8 +180,8 @@ def unit (X : BialgCat R) : (𝟭 (BialgCat R)).obj X ≅ (toBimon' R ⋙ ofBimo
   inv_hom_id := rfl
 
 @[simps]
-noncomputable def counit (X : Bimon' (ModuleCat R)) :
-    (ofBimon' R ⋙ toBimon' R).obj X ≅ (𝟭 (Bimon' (ModuleCat R))).obj X where
+noncomputable def bimonEquivalence_counit (X : Bimon (ModuleCat R)) :
+    (ofBimon R ⋙ toBimon R).obj X ≅ (𝟭 (Bimon (ModuleCat R))).obj X where
   hom := {
     hom := 𝟙 _
     isBimonHom_hom := {
@@ -201,13 +193,8 @@ noncomputable def counit (X : Bimon' (ModuleCat R)) :
       hom_counit := rfl
       hom_comul := by
         ext (x : X.X)
-        -- simp only [Functor.id_obj, tensorObj_carrier, ofBimon', ofBimonObj_carrier, of_coe,
-          -- Lean.Elab.WF.paramLet, toBimon', Functor.comp_obj, coe_of, ModuleCat.hom_comp,
-          -- ModuleCat.MonoidalCategory.tensorHom_def, hom_ofHom]
         symm
         exact DFunLike.congr_fun (TensorProduct.map_id (M := X.X) (N := X.X)) _
-        -- erw [TensorProduct.map_id (M:=X.X) (N:=X.X)]
-        -- rfl
     }
   }
   inv := {
@@ -221,14 +208,8 @@ noncomputable def counit (X : Bimon' (ModuleCat R)) :
       hom_counit := rfl
       hom_comul := by
         ext (x : X.X)
-        -- simp only [Functor.id_obj, tensorObj_carrier, ofBimon', ofBimonObj_carrier, of_coe,
-          -- Lean.Elab.WF.paramLet, toBimon', Functor.comp_obj, coe_of, ModuleCat.hom_comp,
-          -- ModuleCat.MonoidalCategory.tensorHom_def, hom_ofHom]
         symm
         exact DFunLike.congr_fun (TensorProduct.map_id (M := X.X) (N := X.X)) _
-        -- simp
-        -- erw [TensorProduct.map_id (M:=X.X) (N:=X.X)]
-        -- rfl
     }
   }
   hom_inv_id := rfl
@@ -236,13 +217,11 @@ noncomputable def counit (X : Bimon' (ModuleCat R)) :
 
 /-- The natural category equivalence between `R`-bialgebras and bimonoid objects in the
 category of `R`-modules. -/
-@[simps]
-noncomputable def bimonEquivalence : BialgCat R ≌ Bimon' (ModuleCat R) where
-  functor := toBimon' R
-  inverse := ofBimon' R
-  unitIso := NatIso.ofComponents unit
-  counitIso := NatIso.ofComponents counit
+@[simps, implicit_reducible]
+noncomputable def bimonEquivalence : BialgCat R ≌ Bimon (ModuleCat R) where
+  functor := toBimon R
+  inverse := ofBimon R
+  unitIso := NatIso.ofComponents bimonEquivalence_unit
+  counitIso := NatIso.ofComponents bimonEquivalence_counit
 
-end Bimon
-
--- #min_imports
+end CategoryTheory.BialgCat

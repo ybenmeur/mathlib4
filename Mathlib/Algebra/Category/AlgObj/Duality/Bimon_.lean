@@ -6,7 +6,6 @@ Authors: Yacine Benmeuraiem
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Bimon_
-public import Mathlib.Algebra.Category.AlgObj.Bimon'
 
 /-! # Monoid, comonoid, and bimonoid objects in opposite category -/
 
@@ -213,7 +212,7 @@ end op_instances
 
 end homs
 
-def bimon'_equiv_opposite : Bimon' C ≌ (Bimon' Cᵒᵖ)ᵒᵖ where
+def bimon'_equiv_opposite : Bimon C ≌ (Bimon Cᵒᵖ)ᵒᵖ where
   functor := {
     obj X := op ⟨op X.X⟩
     map f := op ⟨f.hom.op⟩

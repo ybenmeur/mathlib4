@@ -17,21 +17,7 @@ namespace CategoryTheory.Functor
 open HopfObj
 
 variable {C D : Type*} [Category C] [Category D] [MonoidalCategory C] [BraidedCategory C]
-  [MonoidalCategory D] [BraidedCategory D] (F : C ⥤ D) [F.Full] [F.Faithful]
-    [F.Braided] (X : C)
-
-/-! If `F` is a fully faithful braided functor, and `F.obj X` admits a Hopf object
-structure, then there is a natural Hopf object structure on `X`. -/
-@[implicit_reducible]
-noncomputable def hopfobj_of_hopfobj_obj [h : HopfObj (F.obj X)] : HopfObj X where
-  __ := F.bimonobj_of_bimonobj_obj X
-  antipode := F.preimage antipode
-  antipode_left := by
-    apply F.map_injective
-    simp [Monoidal.map_whiskerRight F]
-  antipode_right := by
-    apply F.map_injective
-    simp [Monoidal.map_whiskerLeft F]
+  [MonoidalCategory D] [BraidedCategory D] (F : C ⥤ D) [F.Braided] (X : C)
 
 section FullyFaithful
 
@@ -44,11 +30,24 @@ abbrev FullyFaithful.hopfObj (hF : F.FullyFaithful) (X : C) [h : HopfObj (F.obj 
   __ := hF.bimonObj X
   antipode := hF.preimage antipode
   antipode_left := by
-    apply F.map_injective
+    apply hF.map_injective
     simp [Monoidal.map_whiskerRight F]
   antipode_right := by
-    apply F.map_injective
+    apply hF.map_injective
     simp [Monoidal.map_whiskerLeft F]
+
+
+/-- Pullback a Hopf monoid along a fully faithful braided functor as a bundled object. -/
+@[implicit_reducible]
+def FullyFaithful.hopf (hF : F.FullyFaithful) (X : C) [HopfObj (F.obj X)] : Hopf C where
+  X := X
+  hopf := hF.hopfObj X
+
+/-- Pullback a morphism between Hopf monoids along a fully faithful braided functor. -/
+@[simps!]
+def FullyFaithful.hopfMap (hF : F.FullyFaithful) (X Y : C) [HopfObj (F.obj X)]
+    [HopfObj (F.obj Y)] (f : F.obj X ⟶ F.obj Y) [IsBimonHom f] : hF.hopf X ⟶ hF.hopf Y :=
+  letI := hF.isBimonHom X Y f; Hopf.homMk (hF.preimage f)
 
 end FullyFaithful
 

@@ -800,8 +800,6 @@ theorem SymmetricCategory.tensorμ_braid_swap
 
 instance : BraidedCategory Cᵒᵖ where
   braiding X Y := (β_ Y.unop X.unop).op
-  braiding_naturality_right X {_ _} f := Quiver.Hom.unop_inj <| by simp
-  braiding_naturality_left {_ _} f Z := Quiver.Hom.unop_inj <| by simp
 
 section OppositeLemmas
 
@@ -817,6 +815,40 @@ open Opposite
 @[simp] lemma unop_inv_braiding (X Y : Cᵒᵖ) : (β_ X Y).inv.unop = (β_ (unop Y) (unop X)).inv := rfl
 
 end OppositeLemmas
+
+namespace Functor
+
+namespace rightOp
+
+variable (F : Cᵒᵖ ⥤ D)
+
+instance [F.Braided] : F.rightOp.Braided where
+  braided _ _ := by
+    apply Quiver.Hom.unop_inj
+    simp
+
+end rightOp
+
+namespace leftOp
+
+variable (F : C ⥤ Dᵒᵖ)
+
+instance [F.Braided] : F.leftOp.Braided where
+  braided _ _ := by apply Quiver.Hom.op_inj; simp
+
+end leftOp
+
+namespace op
+
+variable (F : C ⥤ D)
+
+instance [F.Braided] : F.op.Braided where
+  braided _ _ := by apply Quiver.Hom.unop_inj; simp
+
+end op
+
+end Functor
+
 
 namespace MonoidalOpposite
 

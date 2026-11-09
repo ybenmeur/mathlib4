@@ -52,6 +52,15 @@ abbrev ofHom {V W : Type v} [AddCommGroup V] [Module R V] [Module.Finite R V]
 
 instance : HasForget₂ (FGProj R) (ModuleCat R) := HasForget₂.trans _ (FGModuleCat R) _
 
+-- def fullyFaithfulForget₂FGModuleCat : (forget₂ (FGModuleCat R) (ModuleCat R)).FullyFaithful :=
+--   (ModuleCat.isFG R).fullyFaithfulι
+
+def fullyFaithfulForget₂ModuleCat : (forget₂ (FGProj R) (ModuleCat R)).FullyFaithful :=
+  (isProjective R).fullyFaithfulι.comp (ModuleCat.isFG R).fullyFaithfulι
+
+instance : (forget₂ (FGProj R) (ModuleCat R)).Braided := inferInstanceAs <|
+  ((isProjective R).ι ⋙ (ModuleCat.isFG R).ι).Braided
+
 variable {R} in
 /-- Converts an isomorphism in the category `FGModuleCat R` to
 a `LinearEquiv` between the underlying modules. -/
