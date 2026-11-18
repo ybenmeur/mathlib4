@@ -34,6 +34,76 @@ Hopf monoids to Hopf monoids.
 
 universe v u
 
+
+section nattransbraided
+
+namespace CategoryTheory
+
+variable {C D : Type*} [Category* C] [MonoidalCategory C] [Category* D] [MonoidalCategory D]
+    {F G : C ⥤ D} (n : F ⟶ G) (X : C)
+
+attribute [local instance] Functor.monObjObj in
+instance isMonHom_monoidalNatTrans_app [F.LaxMonoidal] [G.LaxMonoidal] [n.IsMonoidal] [MonObj X] :
+    IsMonHom (n.app X) where
+  one_hom := by simp
+  mul_hom := by simp only [Functor.obj.μ_def, Category.assoc, NatTrans.naturality,
+    NatTrans.IsMonoidal.tensor_assoc]
+
+@[simps]
+def NatTrans.mapMon [F.LaxMonoidal] [G.LaxMonoidal] [n.IsMonoidal] : F.mapMon ⟶ G.mapMon where
+  app _ := .mk (n.app _)
+
+-- maybe there could be `NatTrans.IsLaxMonoidal` (current def or add `counit` and `cotensor`)
+-- and `NatTrans.IsOplaxMonoidal`?
+open MonoidalCategory in
+@[reassoc (attr := simp)]
+lemma NatTrans.IsMonoidal.counit [F.Monoidal] [G.Monoidal] [n.IsMonoidal] : n.app (𝟙_ C) ≫
+  Functor.OplaxMonoidal.η G = Functor.OplaxMonoidal.η F := by simp [← Functor.Monoidal.inv_ε]
+
+open MonoidalCategory in
+@[reassoc (attr := simp)]
+lemma NatTrans.IsMonoidal.cotensor [F.Monoidal] [G.Monoidal] [n.IsMonoidal] (X Y) :
+    n.app (X ⊗ Y) ≫ Functor.OplaxMonoidal.δ G _ _ =
+    Functor.OplaxMonoidal.δ F _ _ ≫ (n.app X ⊗ₘ n.app Y) := by simp [← Functor.Monoidal.inv_μ]
+
+attribute [local instance] Functor.obj.instComonObj in
+instance isComonHom_monoidalNatTrans_app [F.Monoidal] [G.Monoidal] [n.IsMonoidal] [ComonObj X] :
+    IsComonHom (n.app X) where
+  hom_counit := by simp [← NatTrans.naturality_assoc]
+  hom_comul := by simp [← NatTrans.naturality_assoc]
+
+@[simps]
+def NatTrans.mapComon [F.Monoidal] [G.Monoidal] [n.IsMonoidal] : F.mapComon ⟶ G.mapComon where
+  app _ := .mk (n.app _)
+
+attribute [local instance] Functor.obj.instBimonObj in
+instance isBimonHom_monoidalNatTrans_app [BraidedCategory C] [BraidedCategory D] [F.Braided]
+    [G.Braided] [n.IsMonoidal] [BimonObj X] : IsBimonHom (n.app X) where
+
+@[simps]
+def NatTrans.mapBimon [BraidedCategory C] [BraidedCategory D] [F.Braided] [G.Braided]
+    [n.IsMonoidal] : F.mapBimon ⟶ G.mapBimon where
+  app _ := .mk (n.app _)
+
+@[simps]
+def NatTrans.mapHopf [BraidedCategory C] [BraidedCategory D] [F.Braided] [G.Braided]
+    [n.IsMonoidal] : F.mapHopf ⟶ G.mapHopf where
+  app _ := Hopf.homMk (n.app _)
+
+@[simps]
+def Iso.mapHopf [BraidedCategory C] [BraidedCategory D] [F.Braided] [G.Braided] (e : F ≅ G)
+    [e.hom.IsMonoidal] : F.mapHopf ≅ G.mapHopf where
+  hom := e.hom.mapHopf
+  inv := e.inv.mapHopf
+
+instance [BraidedCategory C] : (opOp C).Braided where
+instance [BraidedCategory C] : (unopUnop C).Braided where
+
+end CategoryTheory
+
+end nattransbraided
+
+
 variable (R A : Type v) [CommRing R] [Ring A] [HopfAlgebra R A]
   [Module.Finite R A] [Module.Projective R A]
 
@@ -85,16 +155,19 @@ noncomputable def linearEquiv : CartierDual R A ≃ₗ[R] Module.Dual R A :=
 
 variable {R A} in
 /-- The identity as a type helper. -/
-noncomputable abbrev toDual : CartierDual R A →ₗ[R] Module.Dual R A :=
+noncomputable def toDual : CartierDual R A →ₗ[R] Module.Dual R A :=
   linearEquiv R A
 
 noncomputable def linearEquivTensor :
   CartierDual R A ⊗[R] CartierDual R A ≃ₗ[R] Module.Dual R A ⊗[R] Module.Dual R A :=
  LinearEquiv.refl R _
 
+@[ext]
+lemma ext (f g : CartierDual R A) (h : f.toDual = g.toDual) : f = g := by simp_all [toDual]
+
 variable {R A} in
 /-- The identity as a type helper. -/
-noncomputable abbrev toDualTensor :
+noncomputable def toDualTensor :
   CartierDual R A ⊗[R] CartierDual R A →ₗ[R] Module.Dual R A ⊗[R] Module.Dual R A :=
  linearEquivTensor R A
 
@@ -102,6 +175,10 @@ open RingTheory.LinearMap in
 lemma toDualTensor_eq_tensorHom : toDualTensor (R:=R) (A:=A) = toDual ⊗ₘ toDual := by
   ext
   rfl
+
+@[ext]
+lemma tensorExt (f g : CartierDual R A ⊗[R] CartierDual R A)
+    (h : toDualTensor f = toDualTensor g) : f = g := by simp_all [toDualTensor]
 
 section operations
 
@@ -230,59 +307,6 @@ instance : Module.Finite R (CartierDual R A) :=
 instance : Module.Projective R (CartierDual R A) :=
   inferInstanceAs <| Module.Projective R (Module.Dual R A)
 
-section nattransbraided
-
-#check Functor.Braided
-#check NatTrans.IsMonoidal
-
-variable {C D : Type*} [Category* C] [MonoidalCategory C] [Category* D] [MonoidalCategory D]
-    {F G : C ⥤ D} (n : F ⟶ G) (X : C)
-
-attribute [local instance] Functor.monObjObj in
-instance isMonHom_monoidalNatTrans_app [F.LaxMonoidal] [G.LaxMonoidal] [n.IsMonoidal] [MonObj X] :
-    IsMonHom (n.app X) where
-  one_hom := by simp
-  mul_hom := by simp only [Functor.obj.μ_def, Category.assoc, NatTrans.naturality,
-    NatTrans.IsMonoidal.tensor_assoc]
-
-def NatTrans.mapMon [F.LaxMonoidal] [G.LaxMonoidal] [n.IsMonoidal] : F.mapMon ⟶ G.mapMon where
-  app _ := .mk (n.app _)
-
--- maybe there could be `NatTrans.IsLaxMonoidal` (current def or add `counit` and `cotensor`)
--- and `NatTrans.IsOplaxMonoidal`?
-open MonoidalCategory in
-@[reassoc (attr := simp)]
-lemma NatTrans.IsMonoidal.counit [F.Monoidal] [G.Monoidal] [n.IsMonoidal] : n.app (𝟙_ C) ≫
-  Functor.OplaxMonoidal.η G = Functor.OplaxMonoidal.η F := by simp [← Functor.Monoidal.inv_ε]
-
-open MonoidalCategory in
-@[reassoc (attr := simp)]
-lemma NatTrans.IsMonoidal.cotensor [F.Monoidal] [G.Monoidal] [n.IsMonoidal] (X Y) :
-    n.app (X ⊗ Y) ≫ Functor.OplaxMonoidal.δ G _ _ =
-    Functor.OplaxMonoidal.δ F _ _ ≫ (n.app X ⊗ₘ n.app Y) := by simp [← Functor.Monoidal.inv_μ]
-
-attribute [local instance] Functor.obj.instComonObj in
-instance isComonHom_monoidalNatTrans_app [F.Monoidal] [G.Monoidal] [n.IsMonoidal] [ComonObj X] :
-    IsComonHom (n.app X) where
-  hom_counit := by simp [← NatTrans.naturality_assoc]
-  hom_comul := by simp [← NatTrans.naturality_assoc]
-
-def NatTrans.mapComon [F.Monoidal] [G.Monoidal] [n.IsMonoidal] : F.mapComon ⟶ G.mapComon where
-  app _ := .mk (n.app _)
-
-attribute [local instance] Functor.obj.instBimonObj in
-instance isBimonHom_monoidalNatTrans_app [BraidedCategory C] [BraidedCategory D] [F.Braided]
-    [G.Braided] [n.IsMonoidal] [BimonObj X] : IsBimonHom (n.app X) where
-
-def NatTrans.mapBimon [BraidedCategory C] [BraidedCategory D] [F.Braided] [G.Braided]
-    [n.IsMonoidal] : F.mapBimon ⟶ G.mapBimon where
-  app _ := .mk (n.app _)
-
-def NatTrans.mapHopf [BraidedCategory C] [BraidedCategory D] [F.Braided] [G.Braided]
-    [n.IsMonoidal] : F.mapHopf ⟶ G.mapHopf where
-  app _ := Hopf.homMk (n.app _)
-
-end nattransbraided
 
 @[simp]
 noncomputable def nattrans : unopUnop (FGProj R) ≅ FGProj.dual.op ⋙ FGProj.dual :=
@@ -301,12 +325,32 @@ instance : (nattrans R).hom.IsMonoidal where
 noncomputable def bidualLinearEquiv : A ≃ₗ[R] CartierDual R (CartierDual R A) :=
   Module.evalEquiv R A
 
+@[simp]
+lemma bidualLinearEquiv_toDual (a : A) (f : CartierDual R A) :
+    ((bidualLinearEquiv R A a).toDual f) = Module.evalEquiv R A a f.toDual := rfl
+
+open Opposite in
+noncomputable def bidualBialgEquiv' : A ≃ₐc[R] CartierDual R (CartierDual R A) := by
+  have := ((((isProjective R).ι ⋙ (ModuleCat.isFG R).ι).mapHopf ⋙ hopfEquivalence.inverse).mapIso
+    ((nattrans R).mapHopf.app ((opOp _).mapHopf.obj (toHopfFGProj R A))))
+  -- simp [toHopfFGProj, Functor.FullyFaithful.hopf] at this
+  -- exact ((hopfEquivalence_unit (.of R A)).trans (this.trans (hopfEquivalence_unit (.of R (CartierDual R (CartierDual R A)))).symm)).toHopfAlgEquiv
+  sorry
+
 -- a monoidal natural iso between braided functors gives a natural iso on the Hopf categories
 noncomputable def bidualBialgEquiv : A ≃ₐc[R] CartierDual R (CartierDual R A) where
   __ := bidualLinearEquiv R A
-  counit_comp := sorry
-  map_comp_comul := sorry
-  map_mul' := sorry
+  counit_comp := by
+    ext
+    simp
+  map_comp_comul := by
+    ext
+    simp
+    sorry
+  map_mul' _ _ := by
+    ext
+    simp
+    sorry
 
 end CartierDual
 
