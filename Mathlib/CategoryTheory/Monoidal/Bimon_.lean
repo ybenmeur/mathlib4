@@ -65,6 +65,7 @@ variable (C) in
 A bimonoid object in a braided category `C` is a comonoid object in the (monoidal)
 category of monoid objects in `C`.
 -/
+@[implicit_reducible]
 def Bimon := Comon (Mon C)
 
 namespace Bimon
@@ -339,14 +340,13 @@ attribute [local instance] obj.instBimonObj
 instance map.instIsBimon_Hom (F : C ⥤ D) [F.Braided] {X Y : C} [BimonObj X] [BimonObj Y]
     (f : X ⟶ Y) [IsBimonHom f] : IsBimonHom (F.map f) where
 
-set_option backward.isDefEq.respectTransparency.types false in
 /-- A monoidal functor takes bimonoid objects to bimonoid objects.
 
 That is, a monoidal functor `F : C ⥤ D` induces a functor `Bimon C ⥤ Bimon D`.
 -/
-@[implicit_reducible, simps]
+@[simps, implicit_reducible]
 def mapBimon (F : C ⥤ D) [F.Braided] : Bimon C ⥤ Bimon D where
-  obj A := .mk' (F.obj A.X.X)
+  obj A := F.mapMon.mapComon.obj A
   map f := F.mapMon.mapComon.map f
   map_id A := by ext; simp
   map_comp f g := by ext; simp
