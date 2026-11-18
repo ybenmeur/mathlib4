@@ -310,4 +310,50 @@ def mk' (X : C) [BimonObj X] : Bimon C where
       comul := .mk' (Δ : X ⟶ X ⊗ X) }
 
 end Bimon
+
+namespace Functor
+
+variable {D : Type*} [Category D] [MonoidalCategory D] [BraidedCategory D]
+
+open MonObj ComonObj BimonObj IsComonHom
+
+/-- The image of a bimonoid object under an braided functor is a bimonoid object. -/
+abbrev obj.instBimonObj (A : C) [BimonObj A] (F : C ⥤ D) [F.Braided] : BimonObj (F.obj A) where
+  __ := obj.instComonObj A F
+  __ := monObjObj A
+  mul_comul := by
+    simp only [μ_def, Δ_def, Category.assoc, ← F.map_comp_assoc, mul_comul,
+      ← (cancel_mono (LaxMonoidal.μ F A A))]
+    simp [← tensorHom_comp_tensorHom, tensorμ_comp_μ_tensorHom_μ_comp_μ_assoc]
+  one_comul := by
+    simp only [η_def, Δ_def, Category.assoc, ← F.map_comp_assoc, one_comul, tensorObj.one_def]
+    simp [← tensorHom_comp_tensorHom, leftUnitor_inv_comp_tensorHom_assoc]
+  mul_counit := by
+    simp only [μ_def, ε_def, Category.assoc, ← F.map_comp_assoc]
+    simp [tensorHom_def]
+  one_counit := by
+    simp [← F.map_comp_assoc]
+
+attribute [local instance] obj.instBimonObj
+
+instance map.instIsBimon_Hom (F : C ⥤ D) [F.Braided] {X Y : C} [BimonObj X] [BimonObj Y]
+    (f : X ⟶ Y) [IsBimonHom f] : IsBimonHom (F.map f) where
+
+set_option backward.isDefEq.respectTransparency.types false in
+/-- A monoidal functor takes bimonoid objects to bimonoid objects.
+
+That is, a monoidal functor `F : C ⥤ D` induces a functor `Bimon C ⥤ Bimon D`.
+-/
+@[implicit_reducible, simps]
+def mapBimon (F : C ⥤ D) [F.Braided] : Bimon C ⥤ Bimon D where
+  obj A := .mk' (F.obj A.X.X)
+  map f := F.mapMon.mapComon.map f
+  map_id A := by ext; simp
+  map_comp f g := by ext; simp
+
+-- TODO We haven't yet set up the category structure on `BraidedFunctor C D`
+-- and so can't state `mapBimonFunctor : BraidedFunctor C D ⥤ Bimon C ⥤ Bimon D`.
+
+end Functor
+
 end CategoryTheory
