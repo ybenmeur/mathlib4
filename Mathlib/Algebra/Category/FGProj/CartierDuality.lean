@@ -53,8 +53,8 @@ instance isMonHom_monoidalNatTrans_app [F.LaxMonoidal] [G.LaxMonoidal] [n.IsMono
 def NatTrans.mapMon [F.LaxMonoidal] [G.LaxMonoidal] [n.IsMonoidal] : F.mapMon ⟶ G.mapMon where
   app _ := .mk (n.app _)
 
--- maybe there could be `NatTrans.IsLaxMonoidal` (current def or add `counit` and `cotensor`)
--- and `NatTrans.IsOplaxMonoidal`?
+-- maybe there could be `NatTrans.IsLaxMonoidal` (current def)
+-- and `NatTrans.IsOplaxMonoidal` and for `NatTrans.IsMonoidal`  add `counit` and `cotensor`?
 open MonoidalCategory in
 @[reassoc (attr := simp)]
 lemma NatTrans.IsMonoidal.counit [F.Monoidal] [G.Monoidal] [n.IsMonoidal] : n.app (𝟙_ C) ≫
@@ -104,8 +104,9 @@ end CategoryTheory
 end nattransbraided
 
 
-variable (R A : Type v) [CommRing R] [Ring A] [HopfAlgebra R A]
-  [Module.Finite R A] [Module.Projective R A]
+variable (R A B : Type v) [CommRing R]
+  [Ring A] [HopfAlgebra R A] [Module.Finite R A] [Module.Projective R A]
+  [Ring B] [HopfAlgebra R B] [Module.Finite R B] [Module.Projective R B]
 
 
 open FGModuleCat CategoryTheory Hopf
@@ -114,9 +115,9 @@ open TensorProduct Coalgebra MonObj ComonObj HopfObj BimonObj RingTheory.LinearM
 
 @[simps! -isSimp]
 noncomputable abbrev toHopfFGProj : Hopf (FGProj R) :=
-  letI : HopfObj (((isProjective R).ι ⋙ (ModuleCat.isFG R).ι).obj (FGProj.of R A)) :=
-    (hopfEquivalence.functor.obj (HopfAlgCat.of R A)).hopf
-  ((isProjective R).fullyFaithfulι.comp (ModuleCat.isFG R).fullyFaithfulι).hopf (FGProj.of R A)
+  ((isProjective R).fullyFaithfulι.comp (ModuleCat.isFG R).fullyFaithfulι).hopf
+    (FGProj.of R A) (hopfEquivalence.functor.obj (.of R A)).hopf
+
   -- X := .of R A
   -- hopf :=
   --   ((isProjective R).fullyFaithfulι.comp (ModuleCat.isFG R).fullyFaithfulι).hopfObj _
@@ -158,27 +159,36 @@ variable {R A} in
 noncomputable def toDual : CartierDual R A →ₗ[R] Module.Dual R A :=
   linearEquiv R A
 
-noncomputable def linearEquivTensor :
-  CartierDual R A ⊗[R] CartierDual R A ≃ₗ[R] Module.Dual R A ⊗[R] Module.Dual R A :=
- LinearEquiv.refl R _
-
 @[ext]
-lemma ext (f g : CartierDual R A) (h : f.toDual = g.toDual) : f = g := by simp_all [toDual]
+lemma ext (f g : CartierDual R A) (h : f.toDual = g.toDual) : f = g := by simp_all only [toDual,
+  LinearEquiv.coe_coe, EmbeddingLike.apply_eq_iff_eq]
 
-variable {R A} in
+noncomputable def linearEquivTensor :
+    CartierDual R A ⊗[R] CartierDual R B ≃ₗ[R] Module.Dual R A ⊗[R] Module.Dual R B :=
+  LinearEquiv.refl R _
+
+variable {R A B} in
 /-- The identity as a type helper. -/
 noncomputable def toDualTensor :
-  CartierDual R A ⊗[R] CartierDual R A →ₗ[R] Module.Dual R A ⊗[R] Module.Dual R A :=
- linearEquivTensor R A
+    CartierDual R A ⊗[R] CartierDual R B →ₗ[R] Module.Dual R A ⊗[R] Module.Dual R B :=
+  linearEquivTensor R A B
+
+variable {R A B} in
+/-- The identity as a type helper. -/
+noncomputable def toDualTensor' :
+    CartierDual R A ⊗[R] CartierDual R B →ₗ[R] Module.Dual R (A ⊗[R] B) :=
+  (dualDistrib R A B) ∘ₗ toDualTensor
 
 open RingTheory.LinearMap in
-lemma toDualTensor_eq_tensorHom : toDualTensor (R:=R) (A:=A) = toDual ⊗ₘ toDual := by
+lemma toDualTensor_eq_tensorHom : toDualTensor (R:=R) (A:=A) (B:=A) = toDual ⊗ₘ toDual := by
   ext
   rfl
 
 @[ext]
 lemma tensorExt (f g : CartierDual R A ⊗[R] CartierDual R A)
-    (h : toDualTensor f = toDualTensor g) : f = g := by simp_all [toDualTensor]
+    (h : toDualTensor' f = toDualTensor' g) : f = g := by
+  simp_all [toDualTensor', ← toLinearMap_dualDistribEquiv, toDualTensor]
+
 
 section operations
 
@@ -242,16 +252,23 @@ end comullemmas
 @[simp]
 lemma comul_def (f : CartierDual R A) (x y : A) :
     (dualDistrib R A A) (toDualTensor (δ f)) (x ⊗ₜ y) = f.toDual (x * y) := by
-  rw [coalgebra_comul_eq_comon_comul]
-  rw [comul_eq_dual_mul]
+  rw [coalgebra_comul_eq_comon_comul, comul_eq_dual_mul]
   simp only [Functor.FullyFaithful.monObj_mul, Functor.FullyFaithful.comp_preimage,
     Functor.rightOp_map, Quiver.Hom.unop_op, ObjectProperty.homMk_hom, ModuleCat.hom_comp,
     Functor.rightOp.μ_def, ObjectProperty.FullSubcategory.comp_hom, hom_ofHom,
     ConcreteCategory.hom_ofHom, LinearMap.coe_comp, Function.comp_apply]
-  rw [dualDistrib_δ]
-  rw [LinearMap.dualMap_apply]
-  rw [hopfEquivalence.hom_mul_eq_mul']
+  rw [dualDistrib_δ, LinearMap.dualMap_apply, hopfEquivalence.hom_mul_eq_mul']
   simp
+
+@[simp]
+lemma comul_def' (f : CartierDual R A) (x y : A) :
+   (toDualTensor' (δ f)) (x ⊗ₜ y) = f.toDual (x * y) := comul_def ..
+
+-- @[simp]
+-- lemma comul_def'' (f : CartierDual R A) (x y : A) :
+--     (dualDistrib R A A) ((toDual ⊗ₘ toDual) (δ f)) (x ⊗ₜ y) = f.toDual (x * y) := by
+--   rw [← toDualTensor_eq_tensorHom, comul_def]
+
 
 section coonelemmas
 private lemma asIso_ε_eq : asIso (Functor.LaxMonoidal.ε (FGProj.dual (R:=R))) =
@@ -329,13 +346,21 @@ noncomputable def bidualLinearEquiv : A ≃ₗ[R] CartierDual R (CartierDual R A
 lemma bidualLinearEquiv_toDual (a : A) (f : CartierDual R A) :
     ((bidualLinearEquiv R A a).toDual f) = Module.evalEquiv R A a f.toDual := rfl
 
+def something :
+    (((isProjective R).ι ⋙ (ModuleCat.isFG R).ι).mapHopf ⋙ hopfEquivalence.inverse).obj
+    ((unopUnop (FGProj R)).mapHopf.obj ((opOp (FGProj R)).mapHopf.obj (toHopfFGProj R A))) ≅
+    .of R A := sorry
+
+def something' :
+    (((isProjective R).ι ⋙ (ModuleCat.isFG R).ι).mapHopf ⋙ hopfEquivalence.inverse).obj
+    ((FGProj.dual.op ⋙ FGProj.dual).mapHopf.obj ((opOp (FGProj R)).mapHopf.obj (toHopfFGProj R A)))
+    ≅ .of R (CartierDual R (CartierDual R A)) := sorry
+
 open Opposite in
 noncomputable def bidualBialgEquiv' : A ≃ₐc[R] CartierDual R (CartierDual R A) := by
   have := ((((isProjective R).ι ⋙ (ModuleCat.isFG R).ι).mapHopf ⋙ hopfEquivalence.inverse).mapIso
     ((nattrans R).mapHopf.app ((opOp _).mapHopf.obj (toHopfFGProj R A))))
-  -- simp [toHopfFGProj, Functor.FullyFaithful.hopf] at this
-  -- exact ((hopfEquivalence_unit (.of R A)).trans (this.trans (hopfEquivalence_unit (.of R (CartierDual R (CartierDual R A)))).symm)).toHopfAlgEquiv
-  sorry
+  exact ((something R A).symm ≪≫ this ≪≫ something' R A).toHopfAlgEquiv
 
 -- a monoidal natural iso between braided functors gives a natural iso on the Hopf categories
 noncomputable def bidualBialgEquiv : A ≃ₐc[R] CartierDual R (CartierDual R A) where
@@ -344,13 +369,23 @@ noncomputable def bidualBialgEquiv : A ≃ₐc[R] CartierDual R (CartierDual R A
     ext
     simp
   map_comp_comul := by
-    ext
-    simp
-    sorry
-  map_mul' _ _ := by
-    ext
-    simp
-    sorry
+    ext x f g
+    simp only [LinearMap.coe_comp, Function.comp_apply, AlgebraTensorModule.curry_apply,
+      LinearMap.restrictScalars_self, curry_apply, LinearEquiv.coe_coe, comul_def',
+      bidualLinearEquiv_toDual, Module.evalEquiv_apply, Module.Dual.eval_apply, mul_def]
+    generalize comul (R:=R) x = t
+    induction t
+    · simp [toDualTensor', toDualTensor_eq_tensorHom]
+    · simp_all
+  map_mul' x y := by
+    ext f
+    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+      bidualLinearEquiv_toDual, Module.evalEquiv_apply, Module.Dual.eval_apply, ← comul_def,
+      mul_def]
+    generalize comul (R:=R) f = t
+    induction t
+    · simp [toDualTensor_eq_tensorHom]
+    · simp_all
 
 end CartierDual
 

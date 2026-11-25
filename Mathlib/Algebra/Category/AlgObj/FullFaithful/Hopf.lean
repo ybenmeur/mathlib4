@@ -39,7 +39,8 @@ abbrev FullyFaithful.hopfObj (hF : F.FullyFaithful) (X : C) [h : HopfObj (F.obj 
 
 /-- Pullback a Hopf monoid along a fully faithful braided functor as a bundled object. -/
 @[implicit_reducible]
-def FullyFaithful.hopf (hF : F.FullyFaithful) (X : C) [HopfObj (F.obj X)] : Hopf C where
+def FullyFaithful.hopf (hF : F.FullyFaithful) (X : C) (h : HopfObj (F.obj X) := by infer_instance) :
+    Hopf C where
   X := X
   hopf := hF.hopfObj X
 
